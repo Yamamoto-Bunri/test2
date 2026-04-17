@@ -195,7 +195,7 @@ window.playAudio = function(event) {
     utterance.lang = 'en-US';
     
     // 読み上げスピード（0.1 〜 10.0 の間で設定。1.0が標準、0.8くらいが聞き取りやすいです）
-    utterance.rate = 0.9;
+    utterance.rate = 8.0;
     
     // 声の高さ（0.0 〜 2.0 の間で設定。1.0が標準）
     utterance.pitch = 1.0;
