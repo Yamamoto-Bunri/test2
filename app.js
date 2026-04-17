@@ -6,7 +6,7 @@ let currentIndex = 0;
 let isRandom = false;
 let masteredWords = [];
 
-// 音声読み上げ用（Chromeバグ回避のためグローバルに定義）
+// 音声読み上げ用
 let dummyUtterance = null;
 let realUtterance = null;
 
@@ -186,36 +186,27 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能（1回目無音ダミー・2回目本命版） ---
-
-let dummyUtterance = null;
-let realUtterance = null;
-
+// --- 音声読み上げ機能（1回目無音・2回目本命版） ---
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
     
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 前の音声を即座にキャンセル
     window.speechSynthesis.cancel();
 
-    // 【1回目：無音】機材（Bluetooth等）を起こすための準備体操
+    // 無音だと無視するブラウザ対策として、音量を0ではなく「0.01（極小）」に設定
     dummyUtterance = new SpeechSynthesisUtterance(word);
     dummyUtterance.lang = 'en-US';
-    // 完全に無音にします（※もしイヤホンが0を無視する場合は 0.01 にしてください）
-    dummyUtterance.volume = 0; 
-    // 待ち時間を少しでも減らすため、無音の1回目は早口(1.5倍速)で読ませます
+    dummyUtterance.volume = 0.01; 
     dummyUtterance.rate = 1.5; 
 
-    // 【2回目：本命】実際に耳に届ける音声
     realUtterance = new SpeechSynthesisUtterance(word);
     realUtterance.lang = 'en-US';
-    realUtterance.volume = 1.0; // 通常音量
-    realUtterance.rate = 0.9;   // 聞き取りやすい少しゆっくりな速度
+    realUtterance.volume = 1.0; 
+    realUtterance.rate = 0.9;   
     realUtterance.pitch = 1.0;
 
-    // 順番に再生キューに入れる（無音 → 通常）
     window.speechSynthesis.speak(dummyUtterance);
     window.speechSynthesis.speak(realUtterance);
 };
