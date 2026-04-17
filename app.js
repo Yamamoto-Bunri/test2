@@ -176,7 +176,6 @@ function updateProgressUI() {
     document.getElementById('progress-text').innerText = `カード: ${currentIndex + 1} / ${total} （覚えた: ${masteredWords.length}）`;
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
-// --- 音声読み上げ機能（頭切れ完全対策版） ---
 
 // --- 音声読み上げ機能（Chrome頭切れ対策：無音ダミー起動版） ---
 
