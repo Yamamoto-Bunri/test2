@@ -186,27 +186,30 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能（1回目無音・2回目本命版） ---
+// --- 音声読み上げ機能（MP3ファイル直接再生版） ---
+// 不安定なWeb Speech APIを捨てて、本物の音声データを直接再生します
+
+// 連続クリック時に前の音声を止めるための変数
+let currentAudio = null; 
+
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
     
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    window.speechSynthesis.cancel();
+    // 前の音声が鳴っていれば止める
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
 
-    // 無音だと無視するブラウザ対策として、音量を0ではなく「0.01（極小）」に設定
-    dummyUtterance = new SpeechSynthesisUtterance(word);
-    dummyUtterance.lang = 'en-US';
-    dummyUtterance.volume = 0.01; 
-    dummyUtterance.rate = 1.5; 
-
-    realUtterance = new SpeechSynthesisUtterance(word);
-    realUtterance.lang = 'en-US';
-    realUtterance.volume = 1.0; 
-    realUtterance.rate = 0.9;   
-    realUtterance.pitch = 1.0;
-
-    window.speechSynthesis.speak(dummyUtterance);
-    window.speechSynthesis.speak(realUtterance);
+    // Googleの音声サーバーから、単語のMP3データを直接取得するURL
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${encodeURIComponent(word)}`;
+    
+    // 音声ファイルとして瞬時に再生
+    currentAudio = new Audio(url);
+    currentAudio.play().catch(error => {
+        console.error("音声の再生に失敗しました", error);
+    });
 };
