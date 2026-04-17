@@ -178,8 +178,11 @@ function updateProgressUI() {
 }
 // --- 音声読み上げ機能（頭切れ完全対策版） ---
 
-// 1. 変数を外（グローバル）に出すことで、ブラウザに勝手に消去されるバグを防ぐ
-let currentUtterance = null;
+// --- 音声読み上げ機能（Chrome頭切れ対策：無音ダミー起動版） ---
+
+// ブラウザのバグで変数が消去されないよう、外側に定義
+let dummyUtterance = null;
+let realUtterance = null;
 
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
@@ -187,21 +190,22 @@ window.playAudio = function(event) {
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 前の音声をキャンセル
+    // 1. 再生中の音声を一旦リセット
     window.speechSynthesis.cancel();
 
-    // 2. 待機時間を少し伸ばす（150ミリ秒）
-    setTimeout(() => {
-        // 3. ピリオドとカンマを組み合わせて「無音の助走期間」を長めに確保する
-        // （音声エンジンはピリオドやカンマを「沈黙」として処理します）
-        const textToSpeak = ". , " + word; 
-        
-        currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-        currentUtterance.lang = 'en-US';
-        currentUtterance.rate = 0.9;
-        currentUtterance.pitch = 1.0;
+    // 2. エンジンを「完全に起こす」ためのダミー音声を用意
+    // （空文字だとChromeに無視されることがあるため、短い文字を入れて音量をゼロにします）
+    dummyUtterance = new SpeechSynthesisUtterance("a"); 
+    dummyUtterance.volume = 0; // 無音にする
 
-        // 再生を実行
-        window.speechSynthesis.speak(currentUtterance);
-    }, 150);
-};
+    // 3. 実際に読み上げる本命の音声を用意
+    realUtterance = new SpeechSynthesisUtterance(word);
+    realUtterance.lang = 'en-US';
+    realUtterance.rate = 0.9;
+    realUtterance.pitch = 1.0;
+    realUtterance.volume = 1.0; // こちらは通常の音量
+
+    // 4. ダミー → 本命 の順で連続再生（キューに登録）
+    // ダミーを無音で処理している間にエンジンが完全に立ち上がり、本命の頭切れを防ぎます。
+    window.speechSynthesis.speak(dummyUtterance);
+    window.speechSynthesis.speak(realUtterance);
