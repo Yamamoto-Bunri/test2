@@ -176,29 +176,32 @@ function updateProgressUI() {
     document.getElementById('progress-text').innerText = `カード: ${currentIndex + 1} / ${total} （覚えた: ${masteredWords.length}）`;
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
-// --- 音声読み上げ機能（頭切れ対策版） ---
+// --- 音声読み上げ機能（頭切れ完全対策版） ---
+
+// 1. 変数を外（グローバル）に出すことで、ブラウザに勝手に消去されるバグを防ぐ
+let currentUtterance = null;
+
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
     
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 1. まず現在の音声をキャンセル
+    // 前の音声をキャンセル
     window.speechSynthesis.cancel();
 
-    // 2. キャンセル処理が完了するのを「0.1秒」だけ待ってから再生する
+    // 2. 待機時間を少し伸ばす（150ミリ秒）
     setTimeout(() => {
-        // 3. エンジンの立ち上がり遅延対策として、単語の前にカンマとスペースを入れる
-        // （これにより、ブラウザが一瞬「息継ぎ」をしてから発音するため、頭切れを防げます）
-        const textToSpeak = ", " + word;
+        // 3. ピリオドとカンマを組み合わせて「無音の助走期間」を長めに確保する
+        // （音声エンジンはピリオドやカンマを「沈黙」として処理します）
+        const textToSpeak = ". , " + word; 
         
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = 'en-US';
-        
-        // 聞き取りやすさの調整
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
+        currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+        currentUtterance.lang = 'en-US';
+        currentUtterance.rate = 0.9;
+        currentUtterance.pitch = 1.0;
 
-        window.speechSynthesis.speak(utterance);
-    }, 100); // 100ミリ秒（0.1秒）の遅延
+        // 再生を実行
+        window.speechSynthesis.speak(currentUtterance);
+    }, 150);
 };
