@@ -4,82 +4,6 @@
     <meta charset="UTF-8">
     <title>英単語学習システム Pro</title>
     <style>
-        /* 既存のスタイルを継承しつつ追加 */
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; }
-        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
-        .active { display: flex; }
-        
-        #unit-list button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 1.1em; }
-        #unit-list button:hover { background: #e3f2fd; }
-
-        .mode-select { margin: 20px 0; display: flex; gap: 10px; }
-        .mode-btn { flex: 1; padding: 15px; cursor: pointer; border-radius: 8px; border: 2px solid #007bff; background: white; color: #007bff; font-weight: bold; }
-        .mode-btn.selected { background: #007bff; color: white; }
-
-        #phonetic-display { color: #e91e63; font-family: serif; font-size: 1.2em; margin-top: 5px; }
-        
-        /* 以前のカードスタイル（省略せずにそのままお使いください） */
-        #card-container { width: 350px; height: 450px; perspective: 1000px; margin-top: 20px; }
-        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
-        .card.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: white; padding: 20px; box-sizing: border-box; }
-        .card-back { transform: rotateY(180deg); display: block; overflow-y: auto; }
-        #progress-bar { width: 0%; height: 12px; background: #4caf50; border-radius: 6px; }
-    </style>
-</head>
-<body>
-
-    <div id="setup-screen" class="screen active">
-        <h1>英単語学習</h1>
-        <p>名前: <span id="display-name"></span></p>
-        
-        <h3>1. 表示順を選択</h3>
-        <div class="mode-select">
-            <div id="mode-order" class="mode-btn selected" onclick="setMode('order')">順番に表示</div>
-            <div id="mode-random" class="mode-btn" onclick="setMode('random')">ランダム</div>
-        </div>
-
-        <h3>2. Unitを選択</h3>
-        <div id="unit-list"></div>
-    </div>
-
-    <div id="learning-screen" class="screen">
-        <button onclick="location.reload()" style="align-self: flex-start; margin-bottom: 10px;">← 戻る</button>
-        <div id="progress-text"></div>
-        <div style="width:100%; background:#ddd; border-radius:6px;"><div id="progress-bar"></div></div>
-
-        <div id="card-container">
-            <div class="card" id="card">
-                <div class="card-face card-front">
-                    <h1 id="word-display">Word</h1>
-                    <p id="pos-display">品詞</p>
-                    <p id="phonetic-display">/発音記号/</p>
-                </div>
-                <div class="card-face card-back">
-                    <p id="meanings-display"></p>
-                    <label><input type="checkbox" id="mastered-checkbox" onchange="toggleMastered(event)"> 覚えた！</label>
-                    <div id="derived-area"></div>
-                </div>
-            </div>
-        </div>
-        <div style="margin-top:20px;">
-            <button onclick="prevCard()" style="background:#666;">前へ</button>
-            <button onclick="nextCard()" style="background:#007bff;">次へ</button>
-        </div>
-    </div>
-
-    <script src="data.js"></script>
-    <script type="module">
-        /* Firebase初期化コード */
-    </script>
-    <script src="app.js"></script>
-</body>
-</html><!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>英単語学習システム Pro</title>
-    <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; }
         .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
         .active { display: flex; }
@@ -171,13 +95,10 @@
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
-         apiKey: "AIzaSyBSWyVpnL2MfcYYD57HZxpdLjuKaSDkrnQ",
-         authDomain: "readingii.firebaseapp.com",
-         projectId: "readingii",
-         storageBucket: "readingii.firebasestorage.app",
-         messagingSenderId: "662452804754",
-         appId: "1:662452804754:web:d55d2ca567ebe9c9601a4b",
-  measurementId: "G-03C4GV7XG6"
+            apiKey: "先生のAPIキー",
+            authDomain: "先生のドメイン",
+            projectId: "先生のプロジェクトID",
+            // ... (その他の設定)
         };
 
         const app = initializeApp(firebaseConfig);
