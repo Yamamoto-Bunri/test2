@@ -194,8 +194,8 @@ window.playAudio = function(event) {
     // 言語をアメリカ英語に設定
     utterance.lang = 'en-US';
     
-    // 読み上げスピード（0.1 〜 10.0 の間で設定。1.0が標準、0.8くらいが聞き取りやすいです）
-    utterance.rate = 8.0;
+    // 読み上げスピード（0.1 〜 1.0 の間で設定。1.0が標準、0.8くらいが聞き取りやすいです）
+    utterance.rate = 1.0;
     
     // 声の高さ（0.0 〜 2.0 の間で設定。1.0が標準）
     utterance.pitch = 1.0;
