@@ -186,24 +186,28 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能（Chrome頭切れ対策：無音ダミー起動版） ---
+// --- 音声読み上げ機能（最速レスポンス ＆ 2回発音による頭切れ回避） ---
+
+let currentUtterance = null; // 変数消失バグ対策
+
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
     
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
+    // 前の音声を即座にキャンセル（遅延の原因になる無駄な待機を廃止）
     window.speechSynthesis.cancel();
 
-    dummyUtterance = new SpeechSynthesisUtterance("a"); 
-    dummyUtterance.volume = 0;
+    // 単語を2回繰り返す（間にカンマを2つ入れて、一瞬のタメを作る）
+    // 1回目が切れてしまっても、2回目で確実に耳に入ります
+    const textToSpeak = word + ", , " + word;
 
-    realUtterance = new SpeechSynthesisUtterance(word);
-    realUtterance.lang = 'en-US';
-    realUtterance.rate = 0.9;
-    realUtterance.pitch = 1.0;
-    realUtterance.volume = 1.0;
+    currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+    currentUtterance.lang = 'en-US';
+    currentUtterance.rate = 0.85; // 2回読むので少し落ち着いた速度に
+    currentUtterance.pitch = 1.0;
 
-    window.speechSynthesis.speak(dummyUtterance);
-    window.speechSynthesis.speak(realUtterance);
+    // 即座に再生
+    window.speechSynthesis.speak(currentUtterance);
 };
