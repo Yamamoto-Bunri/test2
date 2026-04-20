@@ -40,17 +40,17 @@
         <p>名前: <strong id="display-name"></strong></p>
         
         <div style="width: 100%;">
-            <h3>1. 表示順を選択</h3>
-            <div class="mode-select">
-                <div id="mode-order" class="mode-btn selected" onclick="setMode('order')">順番に表示</div>
-                <div id="mode-random" class="mode-btn" onclick="setMode('random')">ランダム表示</div>
-            </div>
+　　　　　　<h3>1. 表示順を選択</h3>
+　　　　　　<div class="mode-select">
+　　    　　　　<div id="mode-order" class="mode-btn selected"　onclick="setOrderMode('order', this)">順番に表示</div>
+　　　　    　　<div id="mode-random" class="mode-btn" onclick="setOrderMode('random', this)">ランダム表示</div>
+</div>
 
-            <h3>2. 対象単語を選択</h3>
-            <div class="mode-select">
-                <div class="mode-btn selected" onclick="setFilterMode('all', this)">全単語</div>
-                <div class="mode-btn" onclick="setFilterMode('unmastered', this)">未習得のみ</div>
-            </div>
+　　　　　　<h3>2. 対象単語を選択</h3>
+　　　　　　<div class="mode-select">
+    　　　　　　<div class="mode-btn selected" onclick="setFilterMode('all', this)">全単語</div>
+    　　　　　　<div class="mode-btn" onclick="setFilterMode('unmastered', this)">未習得のみ</div>
+</div>
 
             <h3>3. Unitを選択</h3>
             <div id="unit-list"></div>
