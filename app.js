@@ -6,6 +6,10 @@ let currentIndex = 0;
 let isRandom = false;
 let masteredWords = [];
 
+// 音声読み上げ用（Chromeバグ回避のためグローバルに定義）
+let dummyUtterance = null;
+let realUtterance = null;
+
 window.onload = function() {
     studentName = localStorage.getItem('studentName');
     if (!studentName || studentName === "null") {
@@ -15,13 +19,23 @@ window.onload = function() {
     document.getElementById('display-name').innerText = studentName || "未設定";
 
     const list = document.getElementById('unit-list');
+    
+    // data.js が正しく読み込めているかチェック
     if (typeof allUnits !== 'undefined') {
-        Object.keys(allUnits).forEach(unit => {
+        const units = Object.keys(allUnits);
+        if (units.length === 0) {
+            list.innerHTML = "<p style='color:red;'>data.jsにデータがありません。CSV変換をやり直してください。</p>";
+            return;
+        }
+        
+        units.forEach(unit => {
             const btn = document.createElement('button');
             btn.innerText = unit;
             btn.onclick = () => startLearning(unit);
             list.appendChild(btn);
         });
+    } else {
+        list.innerHTML = "<p style='color:red;'>data.jsが見つからないか、エラーになっています。</p>";
     }
 };
 
@@ -63,37 +77,34 @@ function resetDisplayIndices() {
     currentIndex = 0;
 }
 
-// 表面の更新（カード移動時に呼ばれる）
+// 表面の更新
 function showCard() {
     const dataIndex = displayIndices[currentIndex];
     const data = wordList[dataIndex];
     
-    // カードを強制的に表面に戻す
     document.getElementById('card').classList.remove('is-flipped');
 
-    // 表面のみ書き換え
     document.getElementById('word-display').innerText = data["Word"] || "";
     document.getElementById('pos-display').innerText = data["品詞"] || "";
     document.getElementById('phonetic-display').innerText = data["発音記号"] ? `/${data["発音記号"]}/` : "";
     
-    // 【重要】裏面を空にする（カンニング防止と残像消去）
+    // 裏面をクリア
     document.getElementById('card-back-contents').innerHTML = "";
     
     updateProgressUI();
 }
 
-// カードをめくる処理
+// カードをめくる
 window.flipCard = function() {
     const card = document.getElementById('card');
     card.classList.toggle('is-flipped');
 
-    // 裏面になった瞬間にだけ、内容を生成する
     if (card.classList.contains('is-flipped')) {
         renderBackSide();
     }
 };
 
-// 裏面の更新（めくった瞬間に呼ばれる）
+// 裏面の生成
 function renderBackSide() {
     const dataIndex = displayIndices[currentIndex];
     const data = wordList[dataIndex];
@@ -107,7 +118,6 @@ function renderBackSide() {
         <p style="font-size: 1.3em; font-weight: bold; color: #2c3e50; margin: 10px 0;">${meanings}</p>
     `;
 
-    // 派生語
     if (data["派生語1"]) {
         html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 0.9em;">
                     <strong style="color: #e67e22;">派生語: ${data["派生語1"]}</strong> [${data["品詞1"] || ""}]<br>${data["意味_派生1"] || ""}
@@ -119,7 +129,6 @@ function renderBackSide() {
                  </div>`;
     }
 
-    // チェックボックス（イベント伝播を止めて、チェック時にカードが戻らないようにする）
     html += `
         <label class="mastered-label" onclick="event.stopPropagation()">
             <input type="checkbox" id="mastered-checkbox" onchange="toggleMastered(event)" ${isMastered ? 'checked' : ''} style="transform: scale(1.6); margin-right: 12px;">
@@ -177,31 +186,24 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能 ---
-// 1. 変数を外（グローバル）に出すことで、ブラウザに勝手に消去されるバグを防ぐ
-let currentUtterance = null;
-
+// --- 音声読み上げ機能（Chrome頭切れ対策：無音ダミー起動版） ---
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
     
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 前の音声をキャンセル
     window.speechSynthesis.cancel();
 
-    // 2. 待機時間を少し伸ばす（150ミリ秒）
-    setTimeout(() => {
-        // 3. ピリオドとカンマを組み合わせて「無音の助走期間」を長めに確保する
-        // （音声エンジンはピリオドやカンマを「沈黙」として処理します）
-        const textToSpeak = ". , " + word; 
-        
-        currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-        currentUtterance.lang = 'en-US';
-        currentUtterance.rate = 0.9;
-        currentUtterance.pitch = 1.0;
+    dummyUtterance = new SpeechSynthesisUtterance("a"); 
+    dummyUtterance.volume = 0;
 
-        // 再生を実行
-        window.speechSynthesis.speak(currentUtterance);
-    }, 150);
+    realUtterance = new SpeechSynthesisUtterance(word);
+    realUtterance.lang = 'en-US';
+    realUtterance.rate = 0.9;
+    realUtterance.pitch = 1.0;
+    realUtterance.volume = 1.0;
+
+    window.speechSynthesis.speak(dummyUtterance);
+    window.speechSynthesis.speak(realUtterance);
 };
