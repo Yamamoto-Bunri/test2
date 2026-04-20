@@ -17,18 +17,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('display-name').innerText = studentName;
 
     const unitListDiv = document.getElementById('unit-list');
-    // data.jsの読み込み待ちを考慮
-    const checkData = setInterval(() => {
+    
+    // data.js の wordData が読み込まれるまで待機してリストを作成する
+    const initUnitList = () => {
         if (typeof wordData !== 'undefined') {
-            clearInterval(checkData);
+            unitListDiv.innerHTML = ""; // 重複防止
             Object.keys(wordData).forEach(unit => {
                 const btn = document.createElement('button');
                 btn.innerText = unit;
                 btn.onclick = () => startLearning(unit);
                 unitListDiv.appendChild(btn);
             });
+        } else {
+            // まだ読み込まれていなければ0.1秒後に再試行
+            setTimeout(initUnitList, 100);
         }
-    }, 100);
+    };
+    initUnitList();
 });
 
 // --- 設定切り替え ---
@@ -66,7 +71,7 @@ async function startLearning(unit) {
     }
 
     if (tempWords.length === 0) {
-        alert("対象の単語がありません。");
+        alert("学習対象の単語がありません。");
         return;
     }
 
@@ -94,7 +99,7 @@ function showCard() {
     document.getElementById('phonetic-display').innerText = word.phonetic || "";
     document.getElementById('card-back-contents').innerHTML = "";
     
-    // 進捗更新
+    // 進捗バーとテキストの更新
     const progress = ((currentIndex + 1) / wordList.length) * 100;
     document.getElementById('progress-bar').style.width = `${progress}%`;
     document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${wordList.length}`;
