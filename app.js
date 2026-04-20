@@ -201,7 +201,7 @@ window.playAudio = function(event) {
     // 機器をスリープから起こすためのダミーです
     const dummy = new SpeechSynthesisUtterance(word);
     dummy.lang = 'en-US';
-    dummy.volume = 0;    // 完全無音
+    dummy.volume = 0.001;    // 完全無音
     dummy.rate = 2.0;    // 2倍速で一瞬で終わらせる
 
     // 【2回目：本番の音声】
