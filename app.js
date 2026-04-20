@@ -9,6 +9,7 @@ let currentUnitName = "";
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. 名前の確認
     studentName = localStorage.getItem('studentName');
     if (!studentName) {
         window.location.href = 'index.html'; 
@@ -16,12 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.getElementById('display-name').innerText = studentName;
 
+    // 2. Unitリストの生成（データの読み込みを待機）
     const unitListDiv = document.getElementById('unit-list');
     
-    // data.js の wordData が読み込まれるまで待機してリストを作成する
-    const initUnitList = () => {
-        if (typeof wordData !== 'undefined') {
-            unitListDiv.innerHTML = ""; // 重複防止
+    function createUnitButtons() {
+        // data.js で定義されている変数が 'wordData' であることを確認してください
+        if (typeof wordData !== 'undefined' && wordData !== null) {
+            console.log("Data loaded successfully:", wordData);
+            unitListDiv.innerHTML = ""; // 初期化
             Object.keys(wordData).forEach(unit => {
                 const btn = document.createElement('button');
                 btn.innerText = unit;
@@ -29,14 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 unitListDiv.appendChild(btn);
             });
         } else {
-            // まだ読み込まれていなければ0.1秒後に再試行
-            setTimeout(initUnitList, 100);
+            // データが見つからない場合は0.2秒後に再試行
+            console.log("Waiting for wordData...");
+            setTimeout(createUnitButtons, 200);
         }
-    };
-    initUnitList();
+    }
+
+    createUnitButtons();
 });
 
-// --- 設定切り替え ---
+// --- 設定切り替え（表示順） ---
 window.setOrderMode = function(mode, element) {
     playMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -44,6 +49,7 @@ window.setOrderMode = function(mode, element) {
     element.classList.add('selected');
 };
 
+// --- 設定切り替え（対象単語） ---
 window.setFilterMode = function(mode, element) {
     filterMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -51,17 +57,17 @@ window.setFilterMode = function(mode, element) {
     element.classList.add('selected');
 };
 
-// --- 学習開始 ---
+// --- 学習開始（既存のロジックを維持） ---
 async function startLearning(unit) {
     currentUnitName = unit;
     const { doc, getDoc } = window.fs;
     
-    // Firebaseから進捗取得
     const docRef = doc(window.db, "progress", studentName, "units", unit);
     try {
         const docSnap = await getDoc(docRef);
         masteredWords = (docSnap.exists()) ? (docSnap.data().masteredWords || []) : [];
     } catch (e) {
+        console.error("Firebase read error:", e);
         masteredWords = [];
     }
 
@@ -89,7 +95,7 @@ async function startLearning(unit) {
     showCard();
 }
 
-// --- カード表示 ---
+// --- 以下、カード表示・音声再生などの関数（変更なしでOK） ---
 function showCard() {
     const word = wordList[currentIndex];
     const card = document.getElementById('card');
@@ -99,7 +105,6 @@ function showCard() {
     document.getElementById('phonetic-display').innerText = word.phonetic || "";
     document.getElementById('card-back-contents').innerHTML = "";
     
-    // 進捗バーとテキストの更新
     const progress = ((currentIndex + 1) / wordList.length) * 100;
     document.getElementById('progress-bar').style.width = `${progress}%`;
     document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${wordList.length}`;
@@ -135,7 +140,7 @@ async function toggleMastered(wordEnglish) {
     } else {
         masteredWords.push(wordEnglish);
     }
-    const docRef = doc(window.db, "progress", studentName, "units", currentUnitName);
+    const docRef = doc(window.fs_db || window.db, "progress", studentName, "units", currentUnitName);
     await setDoc(docRef, { masteredWords: masteredWords }, { merge: true });
 }
 
