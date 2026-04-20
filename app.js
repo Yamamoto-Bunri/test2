@@ -176,3 +176,32 @@ function updateProgressUI() {
     document.getElementById('progress-text').innerText = `カード: ${currentIndex + 1} / ${total} （覚えた: ${masteredWords.length}）`;
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
+
+// --- 音声読み上げ機能 ---
+// 1. 変数を外（グローバル）に出すことで、ブラウザに勝手に消去されるバグを防ぐ
+let currentUtterance = null;
+
+window.playAudio = function(event) {
+    if (event) event.stopPropagation();
+    
+    const word = document.getElementById('word-display').innerText;
+    if (!word) return;
+
+    // 前の音声をキャンセル
+    window.speechSynthesis.cancel();
+
+    // 2. 待機時間を少し伸ばす（150ミリ秒）
+    setTimeout(() => {
+        // 3. ピリオドとカンマを組み合わせて「無音の助走期間」を長めに確保する
+        // （音声エンジンはピリオドやカンマを「沈黙」として処理します）
+        const textToSpeak = ". , " + word; 
+        
+        currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+        currentUtterance.lang = 'en-US';
+        currentUtterance.rate = 0.9;
+        currentUtterance.pitch = 1.0;
+
+        // 再生を実行
+        window.speechSynthesis.speak(currentUtterance);
+    }, 150);
+};
