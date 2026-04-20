@@ -201,7 +201,7 @@ window.playAudio = function(event) {
     // 単語ではなく「スペース」を読ませることで物理的に無音にします
     const dummy = new SpeechSynthesisUtterance(" "); 
     dummy.volume = 0; // 念のため0に設定
-    dummy.rate = 4.0; // 空白なので最速で終わらせる
+    dummy.rate = 2.0; // 空白なので最速で終わらせる
 
     // 【2回目：本番の音声】
     const real = new SpeechSynthesisUtterance(word);
