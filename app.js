@@ -186,8 +186,7 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能（GitHub Pages 対応・高音質版） ---
-let currentAudio = null; 
+// --- 音声読み上げ機能（究極の安定版：Web Speech API 2回読み） ---
 
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
@@ -195,19 +194,20 @@ window.playAudio = function(event) {
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-    }
+    // 進行中の音声をすべてキャンセル
+    window.speechSynthesis.cancel();
 
-    // Googleの代わりに、GitHub Pagesからのアクセスを制限していない
-    // 高品質なYoudaoの音声APIを使用します（type=2 がアメリカ英語）
-    const url = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=2`;
+    // 1回目が切れる対策として、同じ単語を2回並べる
+    // (例: "apple, apple")
+    const utterance = new SpeechSynthesisUtterance(`${word}, ${word}`);
     
-    currentAudio = new Audio(url);
-    currentAudio.play().catch(error => {
-        console.error("音声再生エラー:", error);
-        // 万が一エラーが出た場合の保険として、以前のWeb Speech APIを呼ぶなどの処理も可能ですが、
-        // Youdaoは非常に安定しているため、通常はこのまま動きます。
-    });
+    // 言語設定
+    utterance.lang = 'en-US';
+    // 速度（0.9くらいが聞き取りやすい）
+    utterance.rate = 0.9;
+    // 音量
+    utterance.volume = 1.0;
+
+    // 再生
+    window.speechSynthesis.speak(utterance);
 };
