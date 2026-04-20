@@ -188,27 +188,28 @@ function updateProgressUI() {
 
 // --- 音声読み上げ機能（頭切れ対策版） ---
 window.playAudio = function(event) {
-    if (event) event.stopPropagation();
+    // ボタンを押したときにカードが裏返るのを防ぐ
+    event.stopPropagation();
     
+    // 表示されている単語を取得
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 1. まず現在の音声をキャンセル
+    // もし前の音声が鳴り終わっていなければキャンセル
     window.speechSynthesis.cancel();
 
-    // 2. キャンセル処理が完了するのを「0.1秒」だけ待ってから再生する
-    setTimeout(() => {
-        // 3. エンジンの立ち上がり遅延対策として、単語の前にカンマとスペースを入れる
-        // （これにより、ブラウザが一瞬「息継ぎ」をしてから発音するため、頭切れを防げます）
-        const textToSpeak = ", " + word;
-        
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = 'en-US';
-        
-        // 聞き取りやすさの調整
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
+    // 読み上げ用のオブジェクトを作成
+    const utterance = new SpeechSynthesisUtterance(word);
+    
+    // 言語をアメリカ英語に設定
+    utterance.lang = 'en-US';
+    
+    // 読み上げスピード（0.1 〜 10.0 の間で設定。1.0が標準、0.8くらいが聞き取りやすいです）
+    utterance.rate = 0.9;
+    
+    // 声の高さ（0.0 〜 2.0 の間で設定。1.0が標準）
+    utterance.pitch = 1.0;
 
-        window.speechSynthesis.speak(utterance);
-    }, 100); // 100ミリ秒（0.1秒）の遅延
+    // 再生を実行
+    window.speechSynthesis.speak(utterance);
 };
