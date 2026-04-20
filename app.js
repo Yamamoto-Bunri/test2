@@ -1,36 +1,37 @@
 // --- グローバル変数 ---
 let wordList = [];
 let currentIndex = 0;
-let playMode = 'order';      // 'order' or 'random'
-let filterMode = 'all';      // 'all' or 'unmastered'
-let masteredWords = [];      // Firebaseから取得した習得済み単語リスト
+let playMode = 'order';      
+let filterMode = 'all';      
+let masteredWords = [];      
 let studentName = "";
-let currentUnitName = "";    // 現在学習中のUnit名
+let currentUnitName = "";    
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
-    // ログイン情報の確認（localStorageから取得）
     studentName = localStorage.getItem('studentName');
     if (!studentName) {
-        // 名前がない場合は入力画面（index.html）に戻る
         window.location.href = 'index.html'; 
         return;
     }
     document.getElementById('display-name').innerText = studentName;
 
-    // Unitリストの生成（data.jsのwordDataを使用）
     const unitListDiv = document.getElementById('unit-list');
-    if (typeof wordData !== 'undefined') {
-        Object.keys(wordData).forEach(unit => {
-            const btn = document.createElement('button');
-            btn.innerText = unit;
-            btn.onclick = () => startLearning(unit);
-            unitListDiv.appendChild(btn);
-        });
-    }
+    // data.jsの読み込み待ちを考慮
+    const checkData = setInterval(() => {
+        if (typeof wordData !== 'undefined') {
+            clearInterval(checkData);
+            Object.keys(wordData).forEach(unit => {
+                const btn = document.createElement('button');
+                btn.innerText = unit;
+                btn.onclick = () => startLearning(unit);
+                unitListDiv.appendChild(btn);
+            });
+        }
+    }, 100);
 });
 
-// --- 表示順（順番/ランダム）の切り替え ---
+// --- 設定切り替え ---
 window.setOrderMode = function(mode, element) {
     playMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -38,7 +39,6 @@ window.setOrderMode = function(mode, element) {
     element.classList.add('selected');
 };
 
-// --- 対象単語（全単語/未習得）の切り替え ---
 window.setFilterMode = function(mode, element) {
     filterMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -46,39 +46,30 @@ window.setFilterMode = function(mode, element) {
     element.classList.add('selected');
 };
 
-// --- 学習開始処理 ---
+// --- 学習開始 ---
 async function startLearning(unit) {
-    currentUnitName = unit; // 現在のUnit名を保持
+    currentUnitName = unit;
     const { doc, getDoc } = window.fs;
     
-    // Firebaseから進捗を読み込み
+    // Firebaseから進捗取得
     const docRef = doc(window.db, "progress", studentName, "units", unit);
     try {
         const docSnap = await getDoc(docRef);
-        masteredWords = [];
-        if (docSnap.exists()) {
-            masteredWords = docSnap.data().masteredWords || [];
-        }
+        masteredWords = (docSnap.exists()) ? (docSnap.data().masteredWords || []) : [];
     } catch (e) {
-        console.error("Firebase読み込みエラー:", e);
         masteredWords = [];
     }
 
-    // 単語リストの準備
     let tempWords = [...wordData[unit]];
-
-    // 「未習得のみ」フィルターの適用
     if (filterMode === 'unmastered') {
         tempWords = tempWords.filter(w => !masteredWords.includes(w.english));
     }
 
-    // 未習得が0個の場合のチェック
     if (tempWords.length === 0) {
-        alert(filterMode === 'unmastered' ? "このUnitはすべて習得済みです！" : "単語データがありません。");
+        alert("対象の単語がありません。");
         return;
     }
 
-    // 並び替え（ランダムの場合）
     if (playMode === 'random') {
         tempWords.sort(() => Math.random() - 0.5);
     }
@@ -86,30 +77,29 @@ async function startLearning(unit) {
     wordList = tempWords;
     currentIndex = 0;
 
-    // 画面切り替え
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('learning-screen').classList.add('active');
+    document.getElementById('current-unit-title').innerText = unit;
     
     showCard();
 }
 
-// --- カード表示処理 ---
+// --- カード表示 ---
 function showCard() {
     const word = wordList[currentIndex];
     const card = document.getElementById('card');
-    
-    // カードを表面に戻す
     card.classList.remove('flipped');
     
-    // 表面（英語）の表示
     document.getElementById('word-display').innerText = word.english;
     document.getElementById('phonetic-display').innerText = word.phonetic || "";
-    
-    // 裏面の内容をクリア（めくるまで空にする）
     document.getElementById('card-back-contents').innerHTML = "";
+    
+    // 進捗更新
+    const progress = ((currentIndex + 1) / wordList.length) * 100;
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+    document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${wordList.length}`;
 }
 
-// --- カードをめくる処理 ---
 window.flipCard = function() {
     const card = document.getElementById('card');
     if (card.classList.contains('flipped')) return;
@@ -117,49 +107,40 @@ window.flipCard = function() {
     const word = wordList[currentIndex];
     const isMastered = masteredWords.includes(word.english);
 
-    // 裏面の内容を注入（ここでチェックボックスも生成）
     document.getElementById('card-back-contents').innerHTML = `
-        <p style="font-size: 1.5em; font-weight: bold; margin-bottom: 10px;">${word.japanese}</p>
-        <p style="color: #666; margin-bottom: 20px;">${word.example || ""}</p>
-        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-            <label style="font-size: 1.2em; cursor: pointer;">
-                <input type="checkbox" id="master-check" style="transform: scale(1.5);" 
-                ${isMastered ? 'checked' : ''} onchange="toggleMastered('${word.english}')">
-                覚えた！
-            </label>
+        <div style="padding: 20px; text-align: center;">
+            <p style="font-size: 1.6em; font-weight: bold; color: #007bff; margin-bottom: 10px;">${word.japanese}</p>
+            <p style="font-size: 0.9em; color: #555; line-height: 1.4;">${word.example || ""}</p>
+            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                <label style="font-size: 1.3em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <input type="checkbox" id="master-check" style="width: 25px; height: 25px;" 
+                    ${isMastered ? 'checked' : ''} onchange="toggleMastered('${word.english}')">
+                    <span>覚えた！</span>
+                </label>
+            </div>
         </div>
     `;
-
     card.classList.add('flipped');
 };
 
-// --- 習得状況の保存 ---
 async function toggleMastered(wordEnglish) {
     const { doc, setDoc } = window.fs;
-
     if (masteredWords.includes(wordEnglish)) {
         masteredWords = masteredWords.filter(w => w !== wordEnglish);
     } else {
         masteredWords.push(wordEnglish);
     }
-
-    // Firebaseへ保存
     const docRef = doc(window.db, "progress", studentName, "units", currentUnitName);
-    try {
-        await setDoc(docRef, { masteredWords: masteredWords }, { merge: true });
-    } catch (e) {
-        console.error("Firebase保存エラー:", e);
-    }
+    await setDoc(docRef, { masteredWords: masteredWords }, { merge: true });
 }
 
-// --- ナビゲーション ---
 window.nextCard = function() {
     if (currentIndex < wordList.length - 1) {
         currentIndex++;
         showCard();
     } else {
-        alert("Unitの最後まで到達しました！");
-        location.reload(); // 最初に戻る
+        alert("Unitの終了です！");
+        location.reload();
     }
 };
 
@@ -170,26 +151,16 @@ window.prevCard = function() {
     }
 };
 
-// --- 音声読み上げ機能（無音助走＋2回読み安定版） ---
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
-    
     const word = document.getElementById('word-display').innerText;
-    if (!word) return;
-
     window.speechSynthesis.cancel();
-
-    // 1回目：無音（デバイス起動用）
     const dummy = new SpeechSynthesisUtterance(" ");
     dummy.volume = 0;
     dummy.rate = 4.0;
-
-    // 2回目：本番
     const real = new SpeechSynthesisUtterance(word);
     real.lang = 'en-US';
-    real.volume = 1.0;
     real.rate = 0.9;
-
     window.speechSynthesis.speak(dummy);
     window.speechSynthesis.speak(real);
 };
