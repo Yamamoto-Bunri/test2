@@ -35,7 +35,7 @@
 </head>
 <body>
 
-    <div id="setup-screen" class="screen active">
+<div id="setup-screen" class="screen active">
         <h1>英単語学習 Ver2</h1>
         <p>名前: <strong id="display-name"></strong></p>
         
@@ -45,7 +45,14 @@
                 <div id="mode-order" class="mode-btn selected" onclick="setMode('order')">順番に表示</div>
                 <div id="mode-random" class="mode-btn" onclick="setMode('random')">ランダム表示</div>
             </div>
-            <h3>2. Unitを選択</h3>
+
+            <h3>2. 対象単語を選択</h3>
+            <div class="mode-select">
+                <div class="mode-btn selected" onclick="setFilterMode('all', this)">全単語</div>
+                <div class="mode-btn" onclick="setFilterMode('unmastered', this)">未習得のみ</div>
+            </div>
+
+            <h3>3. Unitを選択</h3>
             <div id="unit-list"></div>
         </div>
     </div>
