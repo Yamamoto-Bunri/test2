@@ -9,7 +9,6 @@ let currentUnitName = "";
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. 名前の確認
     studentName = localStorage.getItem('studentName');
     if (!studentName) {
         window.location.href = 'index.html'; 
@@ -17,31 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.getElementById('display-name').innerText = studentName;
 
-    // 2. Unitリストの生成（データの読み込みを待機）
     const unitListDiv = document.getElementById('unit-list');
     
-    function createUnitButtons() {
-        // data.js で定義されている変数が 'wordData' であることを確認してください
-        if (typeof wordData !== 'undefined' && wordData !== null) {
-            console.log("Data loaded successfully:", wordData);
-            unitListDiv.innerHTML = ""; // 初期化
-            Object.keys(wordData).forEach(unit => {
+    // data.js の変数名 'allUnits' が読み込まれるまで待機
+    const initUnitList = () => {
+        // ここを wordData から allUnits に変更しました
+        if (typeof allUnits !== 'undefined') {
+            unitListDiv.innerHTML = ""; 
+            Object.keys(allUnits).forEach(unit => {
                 const btn = document.createElement('button');
                 btn.innerText = unit;
                 btn.onclick = () => startLearning(unit);
                 unitListDiv.appendChild(btn);
             });
         } else {
-            // データが見つからない場合は0.2秒後に再試行
-            console.log("Waiting for wordData...");
-            setTimeout(createUnitButtons, 200);
+            setTimeout(initUnitList, 100);
         }
-    }
-
-    createUnitButtons();
+    };
+    initUnitList();
 });
 
-// --- 設定切り替え（表示順） ---
+// --- 設定切り替え ---
 window.setOrderMode = function(mode, element) {
     playMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -49,7 +44,6 @@ window.setOrderMode = function(mode, element) {
     element.classList.add('selected');
 };
 
-// --- 設定切り替え（対象単語） ---
 window.setFilterMode = function(mode, element) {
     filterMode = mode;
     const buttons = element.parentElement.querySelectorAll('.mode-btn');
@@ -57,7 +51,7 @@ window.setFilterMode = function(mode, element) {
     element.classList.add('selected');
 };
 
-// --- 学習開始（既存のロジックを維持） ---
+// --- 学習開始 ---
 async function startLearning(unit) {
     currentUnitName = unit;
     const { doc, getDoc } = window.fs;
@@ -67,13 +61,15 @@ async function startLearning(unit) {
         const docSnap = await getDoc(docRef);
         masteredWords = (docSnap.exists()) ? (docSnap.data().masteredWords || []) : [];
     } catch (e) {
-        console.error("Firebase read error:", e);
         masteredWords = [];
     }
 
-    let tempWords = [...wordData[unit]];
+    // allUnits を使用
+    let tempWords = [...allUnits[unit]];
+
+    // フィルター処理 (Word プロパティを使用)
     if (filterMode === 'unmastered') {
-        tempWords = tempWords.filter(w => !masteredWords.includes(w.english));
+        tempWords = tempWords.filter(w => !masteredWords.includes(w.Word));
     }
 
     if (tempWords.length === 0) {
@@ -95,14 +91,15 @@ async function startLearning(unit) {
     showCard();
 }
 
-// --- 以下、カード表示・音声再生などの関数（変更なしでOK） ---
+// --- カード表示 ---
 function showCard() {
     const word = wordList[currentIndex];
     const card = document.getElementById('card');
     card.classList.remove('flipped');
     
-    document.getElementById('word-display').innerText = word.english;
-    document.getElementById('phonetic-display').innerText = word.phonetic || "";
+    // data.js の Word と 発音記号 に合わせました
+    document.getElementById('word-display').innerText = word.Word;
+    document.getElementById('phonetic-display').innerText = word["発音記号"] || "";
     document.getElementById('card-back-contents').innerHTML = "";
     
     const progress = ((currentIndex + 1) / wordList.length) * 100;
@@ -115,16 +112,18 @@ window.flipCard = function() {
     if (card.classList.contains('flipped')) return;
 
     const word = wordList[currentIndex];
-    const isMastered = masteredWords.includes(word.english);
+    const isMastered = masteredWords.includes(word.Word);
 
+    // data.js の 意味1 に合わせました
     document.getElementById('card-back-contents').innerHTML = `
         <div style="padding: 20px; text-align: center;">
-            <p style="font-size: 1.6em; font-weight: bold; color: #007bff; margin-bottom: 10px;">${word.japanese}</p>
-            <p style="font-size: 0.9em; color: #555; line-height: 1.4;">${word.example || ""}</p>
+            <p style="font-size: 0.8em; color: #e91e63; margin-bottom: 5px;">${word["品詞"] || ""}</p>
+            <p style="font-size: 1.6em; font-weight: bold; color: #007bff; margin-bottom: 10px;">${word["意味1"]}</p>
+            <p style="font-size: 0.9em; color: #555; line-height: 1.4;">${word["意味2"] || ""}</p>
             <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
                 <label style="font-size: 1.3em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
                     <input type="checkbox" id="master-check" style="width: 25px; height: 25px;" 
-                    ${isMastered ? 'checked' : ''} onchange="toggleMastered('${word.english}')">
+                    ${isMastered ? 'checked' : ''} onchange="toggleMastered('${word.Word}')">
                     <span>覚えた！</span>
                 </label>
             </div>
@@ -140,7 +139,7 @@ async function toggleMastered(wordEnglish) {
     } else {
         masteredWords.push(wordEnglish);
     }
-    const docRef = doc(window.fs_db || window.db, "progress", studentName, "units", currentUnitName);
+    const docRef = doc(window.db, "progress", studentName, "units", currentUnitName);
     await setDoc(docRef, { masteredWords: masteredWords }, { merge: true });
 }
 
