@@ -186,7 +186,7 @@ function updateProgressUI() {
     document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-// --- 音声読み上げ機能（究極の安定版：Web Speech API 2回読み） ---
+// --- 音声読み上げ機能（1回目無音ハイスピード ＋ 2回目本番） ---
 
 window.playAudio = function(event) {
     if (event) event.stopPropagation();
@@ -194,20 +194,24 @@ window.playAudio = function(event) {
     const word = document.getElementById('word-display').innerText;
     if (!word) return;
 
-    // 進行中の音声をすべてキャンセル
+    // 進行中の音声を即座に停止
     window.speechSynthesis.cancel();
 
-    // 1回目が切れる対策として、同じ単語を2回並べる
-    // (例: "apple, apple")
-    const utterance = new SpeechSynthesisUtterance(`${word}, ${word}`);
-    
-    // 言語設定
-    utterance.lang = 'en-US';
-    // 速度（0.9くらいが聞き取りやすい）
-    utterance.rate = 0.9;
-    // 音量
-    utterance.volume = 1.0;
+    // 【1回目：無音の助走】
+    // 機器をスリープから起こすためのダミーです
+    const dummy = new SpeechSynthesisUtterance(word);
+    dummy.lang = 'en-US';
+    dummy.volume = 0;    // 完全無音
+    dummy.rate = 2.0;    // 2倍速で一瞬で終わらせる
 
-    // 再生
-    window.speechSynthesis.speak(utterance);
+    // 【2回目：本番の音声】
+    const real = new SpeechSynthesisUtterance(word);
+    real.lang = 'en-US';
+    real.volume = 1.0;   // 通常音量
+    real.rate = 0.9;     // 聞き取りやすい速度
+    real.pitch = 1.0;
+
+    // 順番に予約（dummyが終わったらすぐrealが流れます）
+    window.speechSynthesis.speak(dummy);
+    window.speechSynthesis.speak(real);
 };
