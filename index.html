@@ -8,38 +8,41 @@
         .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
         .active { display: flex; }
         
-        #unit-list button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 1.1em; }
+        /* モード選択ボタン */
         .mode-select { margin-bottom: 20px; display: flex; gap: 10px; width: 100%; }
         .mode-btn { flex: 1; padding: 12px; cursor: pointer; border-radius: 8px; border: 2px solid #007bff; background: white; color: #007bff; font-weight: bold; text-align: center; }
         .mode-btn.selected { background: #007bff; color: white; }
 
-        /* カードアニメーション */
-        #card-container { width: 350px; height: 450px; perspective: 1000px; margin: 20px 0; }
+        /* Unitリスト */
+        #unit-list button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 1.1em; }
+
+        /* カードのスタイル（元の挙動を維持） */
+        #card-container { width: 350px; height: 500px; perspective: 1000px; margin: 20px 0; }
         .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
         .card.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: white; padding: 20px; box-sizing: border-box; }
-        .card-back { transform: rotateY(180deg); overflow-y: auto; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: white; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .card-back { transform: rotateY(180deg); overflow-y: auto; display: block; }
 
         #progress-container { width: 100%; background: #ddd; border-radius: 10px; height: 10px; margin: 10px 0; }
         #progress-bar { width: 0%; height: 100%; background: #4caf50; border-radius: 10px; transition: width 0.3s; }
         .nav-buttons { display: flex; justify-content: space-between; width: 100%; margin-top: 20px; }
-        .nav-buttons button { padding: 10px 20px; font-size: 1em; border-radius: 5px; border: none; cursor: pointer; }
+        .nav-buttons button { padding: 12px 20px; font-size: 1em; border-radius: 5px; border: none; cursor: pointer; color: white; width: 48%; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen" class="screen active">
-        <h1>英単語学習</h1>
-        <p>生徒: <strong id="display-name"></strong></p>
+        <h1>英単語学習 Ver2</h1>
+        <p>名前: <strong id="display-name"></strong></p>
         
         <div style="width: 100%;">
-            <h3>1. 表示順</h3>
+            <h3>1. 表示順を選択</h3>
             <div class="mode-select">
-                <div id="btn-order" class="mode-btn selected" onclick="setOrder('order')">順番に</div>
-                <div id="btn-random" class="mode-btn" onclick="setOrder('random')">ランダム</div>
+                <div id="btn-order" class="mode-btn selected" onclick="setOrder('order')">順番に表示</div>
+                <div id="btn-random" class="mode-btn" onclick="setOrder('random')">ランダム表示</div>
             </div>
 
-            <h3>2. 対象単語</h3>
+            <h3>2. 対象単語を選択</h3>
             <div class="mode-select">
                 <div id="btn-all" class="mode-btn selected" onclick="setFilter('all')">全単語</div>
                 <div id="btn-unmastered" class="mode-btn" onclick="setFilter('unmastered')">未習得のみ</div>
@@ -51,25 +54,30 @@
     </div>
 
     <div id="learning-screen" class="screen">
-        <div id="progress-text">0 / 0 単語完了</div>
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <button onclick="location.reload()" style="background:none; border:none; color:#666; cursor:pointer;">← 戻る</button>
+            <div id="progress-text" style="font-weight: bold;"></div>
+        </div>
         <div id="progress-container"><div id="progress-bar"></div></div>
 
         <div id="card-container">
             <div class="card" id="card">
                 <div class="card-face card-front">
-                    <div id="complete-badge" style="position:absolute; top:10px; right:10px; color:green; display:none;">✅ 習得済</div>
-                    <span id="pos-display" style="color: #e91e63; font-weight: bold;"></span>
-                    <h1 id="word-display" style="font-size: 3em; margin: 20px 0;"></h1>
-                    <p style="color: #aaa;">タップして答えを見る</p>
+                    <div id="complete-badge" style="position:absolute; top:20px; right:20px; color:green; font-weight:bold; display:none;">✅ 習得済</div>
+                    <span id="pos-display" style="color: #e91e63; font-weight: bold; font-size: 1.2em;"></span>
+                    <h1 id="word-display" style="font-size: 3.5em; margin: 15px 0;"></h1>
+                    <p id="phonetic-display" style="color: #666; font-size: 1.2em;"></p>
+                    <p style="color: #aaa; margin-top: 50px;">タップして答えを見る</p>
                 </div>
                 <div class="card-face card-back">
-                    <h2 id="meanings-display" style="color: #007bff;"></h2>
-                    <div id="derived-display" style="text-align: left; font-size: 0.9em;"></div>
-                    <button id="show-derived" onclick="toggleDerived(event)" style="margin-top:10px;">派生語を表示</button>
+                    <h2 id="meanings-display" style="color: #007bff; margin-top: 20px;"></h2>
+                    <div id="derived-display" style="text-align: left; font-size: 0.9em; padding: 0 10px;"></div>
+                    <button id="show-derived" onclick="toggleDerived(event)" style="margin-top:15px; padding: 8px 15px; border-radius: 5px; border: 1px solid #ddd; background: white; cursor: pointer;">派生語を表示</button>
                     
-                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                        <label style="font-size: 1.2em; cursor: pointer;">
-                            <input type="checkbox" id="mastered-checkbox" onchange="toggleMastered(event)"> 覚えた！
+                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <label style="font-size: 1.3em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <input type="checkbox" id="mastered-checkbox" style="width: 20px; height: 20px;" onchange="toggleMastered(event)">
+                            <span>覚えた！</span>
                         </label>
                     </div>
                 </div>
@@ -77,10 +85,9 @@
         </div>
 
         <div class="nav-buttons">
-            <button onclick="prevCard()" style="background:#6c757d; color:white;">前へ</button>
-            <button onclick="nextCard()" style="background:#007bff; color:white;">次へ</button>
+            <button onclick="prevCard()" style="background:#6c757d;">前のカード</button>
+            <button onclick="nextCard()" style="background:#007bff;">次のカード</button>
         </div>
-        <button onclick="location.reload()" style="margin-top:20px; background:none; border:none; color:blue; text-decoration:underline; cursor:pointer;">Unit選択に戻る</button>
     </div>
 
     <script src="data.js"></script>

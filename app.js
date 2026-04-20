@@ -1,30 +1,30 @@
-let wordList = []; // 現在の学習対象リスト
+let wordList = [];
 let currentIndex = 0;
 let masteredWords = [];
 let studentName = "";
-let playOrder = 'order'; // order or random
-let filterMode = 'all'; // all or unmastered
+let playOrder = 'order'; 
+let filterMode = 'all';
 
 window.onload = async function() {
     // 1. 名前確認
     studentName = localStorage.getItem('studentName');
     if (!studentName || studentName === "null") {
-        studentName = prompt("名前を入力してください（漢字）");
+        studentName = prompt("【進捗保存用】フルネームを漢字で入力してください。");
         if (studentName) localStorage.setItem('studentName', studentName);
         else studentName = "匿名希望";
     }
     document.getElementById('display-name').innerText = studentName;
 
-    // 2. Firebaseから全Unit共通の進捗を読み込み
+    // 2. Firebaseから進捗を読み込む（正常コードのロジック）
     try {
         const docRef = window.fs.doc(window.db, "progress", studentName);
         const docSnap = await window.fs.getDoc(docRef);
         if (docSnap.exists()) {
             masteredWords = docSnap.data().words || [];
         }
-    } catch (e) { console.error("Load Error:", e); }
+    } catch (e) { console.error("読み込みエラー:", e); }
 
-    // 3. Unitリストの作成
+    // 3. Unitリストの生成
     const listDiv = document.getElementById('unit-list');
     if (typeof allUnits !== 'undefined') {
         Object.keys(allUnits).forEach(unitName => {
@@ -35,19 +35,20 @@ window.onload = async function() {
         });
     }
 
-    // 4. カード回転イベント
-    document.getElementById('card').onclick = function() {
+    // 4. カードの回転イベント（正常コードの classList.toggle('is-flipped') を維持）
+    const card = document.getElementById('card');
+    card.onclick = function() {
         this.classList.toggle('is-flipped');
     };
 };
 
-// モード選択
-window.setOrder = (mode) => {
+// モード選択（ボタンの見た目と変数を更新）
+window.setOrder = function(mode) {
     playOrder = mode;
     document.getElementById('btn-order').classList.toggle('selected', mode === 'order');
     document.getElementById('btn-random').classList.toggle('selected', mode === 'random');
 };
-window.setFilter = (mode) => {
+window.setFilter = function(mode) {
     filterMode = mode;
     document.getElementById('btn-all').classList.toggle('selected', mode === 'all');
     document.getElementById('btn-unmastered').classList.toggle('selected', mode === 'unmastered');
@@ -63,7 +64,7 @@ function startLearning(unitName) {
     }
 
     if (rawList.length === 0) {
-        alert("学習する単語がありません！");
+        alert("学習対象の単語がすべて習得済み、またはデータがありません。");
         return;
     }
 
@@ -80,21 +81,25 @@ function startLearning(unitName) {
     displayCard();
 }
 
+// 画面更新（元の正常コードの書き換えロジックを完全復元）
 function displayCard() {
     const data = wordList[currentIndex];
     const isMastered = masteredWords.includes(data["Word"]);
 
+    // 基本情報の書き換え
     document.getElementById("word-display").innerText = data["Word"];
-    document.getElementById("pos-display").innerText = data["品詞"];
+    document.getElementById("pos-display").innerText = data["品詞"] || "";
+    document.getElementById("phonetic-display").innerText = data["発音記号"] || "";
     
     const meanings = [data["意味1"], data["意味2"], data["意味3"]]
         .filter(m => m && m.trim() !== "").join(" / ");
     document.getElementById("meanings-display").innerText = meanings;
 
+    // 覚えた！状態の反映
     document.getElementById("mastered-checkbox").checked = isMastered;
     document.getElementById("complete-badge").style.display = isMastered ? "block" : "none";
 
-    // 派生語処理（以前の正常コードを移植）
+    // 派生語エリアの制御（正常コードのロジック）
     const dDisplay = document.getElementById('derived-display');
     const dButton = document.getElementById('show-derived');
     dDisplay.style.display = 'none';
@@ -104,24 +109,46 @@ function displayCard() {
 
     if (hasDerived) {
         dButton.style.display = "block";
-        let html = "";
-        if (data["別の品詞"]) html += `<div style="background:#f8f9fa;padding:5px;margin-top:10px;"><strong>【別の品詞】</strong><br>${data["別の品詞"]} : ${data["意味"] || ""}</div>`;
-        if (data["派生語1"]) html += `<div style="margin-top:10px;"><strong>【派生語1】</strong><br>${data["派生語1"]} [${data["品詞1"] || ""}]<br>${data["意味1.1"] || ""}</div>`;
-        if (data["派生語2"]) html += `<div style="margin-top:10px;"><strong>【派生語2】</strong><br>${data["派生語2"]} [${data["品詞2"] || ""}]<br>${data["意味2.1"] || ""}</div>`;
-        dDisplay.innerHTML = html;
+        let otherPosHtml = data["別の品詞"] ? `
+            <div style="background: #f8f9fa; padding: 8px; border-radius: 5px; margin-bottom: 10px; margin-top:10px;">
+                <strong style="color: #2c3e50;">【別の品詞】</strong><br>
+                ${data["別の品詞"]} : ${data["意味"] || ""}
+            </div>` : "";
+
+        let deriv1Html = data["派生語1"] ? `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: #e67e22;">【派生語 1】</strong><br>
+                <span style="font-weight: bold;">${data["派生語1"]}</span>
+                <span style="color: #666;"> [${data["品詞1"] || ""}]</span><br>
+                <span>${data["意味1.1"] || ""}</span>
+            </div>` : "";
+
+        let deriv2Html = data["派生語2"] ? `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: #e67e22;">【派生語 2】</strong><br>
+                <span style="font-weight: bold;">${data["派生語2"]}</span>
+                <span style="color: #666;"> [${data["品詞2"] || ""}]</span><br>
+                <span>${data["意味2.1"] || ""}</span>
+            </div>` : "";
+
+        dDisplay.innerHTML = `<hr style="margin: 15px 0; border: 0; border-top: 2px dotted #eee;">${otherPosHtml}${deriv1Html}${deriv2Html}`;
     } else {
         dButton.style.display = "none";
     }
+
     updateProgress();
 }
 
+// 保存処理（正常コードのロジック）
 window.toggleMastered = async function(event) {
     const word = wordList[currentIndex]["Word"];
+    
     if (event.target.checked) {
         if (!masteredWords.includes(word)) masteredWords.push(word);
     } else {
         masteredWords = masteredWords.filter(w => w !== word);
     }
+
     document.getElementById("complete-badge").style.display = event.target.checked ? "block" : "none";
     updateProgress();
 
@@ -130,13 +157,14 @@ window.toggleMastered = async function(event) {
             words: masteredWords,
             updatedAt: new Date()
         });
-    } catch (e) { console.error("Save Error:", e); }
+    } catch (e) { console.error("保存エラー:", e); }
 };
 
 function updateProgress() {
     const total = wordList.length;
-    document.getElementById("progress-text").innerText = `${currentIndex + 1} / ${total} 単語目`;
-    document.getElementById("progress-bar").style.width = `${((currentIndex + 1) / total) * 100}%`;
+    const current = currentIndex + 1;
+    document.getElementById("progress-text").innerText = `${current} / ${total}`;
+    document.getElementById("progress-bar").style.width = `${(current / total) * 100}%`;
 }
 
 window.nextCard = function() {
@@ -144,7 +172,9 @@ window.nextCard = function() {
         currentIndex++;
         document.getElementById('card').classList.remove('is-flipped');
         displayCard();
-    } else { alert("Unit終了です！"); }
+    } else {
+        alert("Unitの終了です！");
+    }
 };
 
 window.prevCard = function() {
