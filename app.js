@@ -5,65 +5,23 @@ let studentName = "";
 let currentUnitName = "";
 
 // ページ読み込み時
-window.onload = function() {
+window.onload = async function() {
     studentName = localStorage.getItem('studentName');
-
-    if (studentName && studentName !== "null") {
-        // 保存済みの名前があればそのままユニット選択画面へ
-        showSetupScreen();
-    } else {
-        // 名前未設定なら名前入力画面を表示
-        document.getElementById('name-screen').classList.add('active');
+    if (!studentName || studentName === "null") {
+        studentName = prompt("名前を漢字で入力してください");
+        if (studentName) localStorage.setItem('studentName', studentName);
     }
+    document.getElementById('display-name').innerText = studentName || "未設定";
 
-    // Enterキーでも送信できるようにする
-    document.getElementById('name-input').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') submitName();
-    });
-};
-
-function showSetupScreen() {
-    document.getElementById('name-screen').classList.remove('active');
-    document.getElementById('setup-screen').classList.add('active');
-    document.getElementById('display-name').innerText = studentName;
-
-    const list = document.getElementById('unit-list');
-    list.innerHTML = ""; // 重複防止のためクリア
-
+    const listDiv = document.getElementById('unit-list');
     if (typeof allUnits !== 'undefined') {
-        const units = Object.keys(allUnits);
-        if (units.length === 0) {
-            list.innerHTML = "<p style='color:red;'>data.jsにデータがありません。</p>";
-            return;
-        }
-        units.forEach(unit => {
+        Object.keys(allUnits).forEach(unit => {
             const btn = document.createElement('button');
             btn.innerText = unit;
             btn.onclick = () => startLearning(unit);
-            list.appendChild(btn);
+            listDiv.appendChild(btn);
         });
-    } else {
-        list.innerHTML = "<p style='color:red;'>data.jsが見つからないか、エラーになっています。</p>";
     }
-}
-
-window.submitName = function() {
-    const input = document.getElementById('name-input').value.trim();
-    const error = document.getElementById('name-error');
-
-    if (!input) {
-        error.innerText = "名前を入力してください";
-        return;
-    }
-    if (input.length < 2) {
-        error.innerText = "2文字以上で入力してください";
-        return;
-    }
-
-    error.innerText = "";
-    studentName = input;
-    localStorage.setItem('studentName', studentName);
-    showSetupScreen();
 };
 
 // 学習開始
