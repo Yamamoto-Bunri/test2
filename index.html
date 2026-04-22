@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -116,4 +117,109 @@
 
     <script src="app.js" defer></script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>英単語学習システム Ver2</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; }
+        .screen { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
+        .active { display: flex; }
+        
+        #unit-list button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; font-size: 1.1em; }
+        #unit-list button:hover { background: #e3f2fd; }
+
+        /* カードのスタイル */
+        #card-container { width: 350px; height: 500px; perspective: 1000px; margin: 20px 0; }
+        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: white; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .card-front { justify-content: center; text-align: center; }
+        .card-back { transform: rotateY(180deg); overflow-y: auto; display: block; }
+
+        #progress-container { width: 100%; background: #ddd; border-radius: 10px; height: 10px; margin: 10px 0; }
+        #progress-bar { width: 0%; height: 100%; background: #4caf50; border-radius: 10px; transition: width 0.3s; }
+        .nav-buttons { display: flex; justify-content: space-between; width: 100%; margin-top: 20px; }
+        .nav-buttons button { padding: 12px 20px; font-size: 1em; border-radius: 5px; border: none; cursor: pointer; color: white; width: 48%; }
+    </style>
+</head>
+<body>
+
+    <div id="name-screen" class="screen active">
+        <h1>英単語学習 Ver2</h1>
+        <p style="color:#555; margin-bottom: 30px;">進捗を保存するために名前を入力してください</p>
+        <div style="width:100%;">
+            <input type="text" id="name-input" placeholder="例：山田 太郎"
+                style="width:100%; padding:15px; font-size:1.1em; border:2px solid #ddd;
+                       border-radius:8px; box-sizing:border-box; margin-bottom:10px;">
+            <p id="name-error" style="color:red; font-size:0.9em; min-height:1.2em; margin:0 0 10px 0;"></p>
+            <button onclick="submitName()"
+                style="width:100%; padding:15px; background:#007bff; color:white;
+                       border:none; border-radius:8px; font-size:1.1em; cursor:pointer;">
+                はじめる
+            </button>
+        </div>
+    </div>
+
+    <div id="setup-screen" class="screen">
+        <h1>英単語学習</h1>
+        <p>生徒: <strong id="display-name"></strong></p>
+        <div id="unit-list"></div>
+    </div>
+
+    <div id="learning-screen" class="screen">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <button onclick="location.reload()" style="background:none; border:none; color:blue; cursor:pointer;">← 戻る</button>
+            <div id="progress-text"></div>
+        </div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+
+        <div id="card-container">
+            <div class="card" id="card" onclick="this.classList.toggle('is-flipped')">
+                <div class="card-face card-front">
+                    <div id="complete-badge" style="position:absolute; top:20px; right:20px; color:green; font-weight:bold; display:none;">✅ 習得済</div>
+                    <span id="pos-display" style="color: #e91e63; font-weight: bold; font-size: 1.2em;"></span>
+                    <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+                        <h1 id="word-display" style="font-size: 3.2em; margin: 0;"></h1>
+                        <button onclick="playAudio(event)" style="background:none; border:none; font-size: 2em; cursor:pointer;">🔊</button>
+                    </div>
+                    <p id="phonetic-display" style="color: #666; font-size: 1.2em;"></p>
+                    <p style="color: #aaa; margin-top: 50px;">タップして答えを見る</p>
+                </div>
+                <div class="card-face card-back" id="card-back-contents">
+                    </div>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="prevCard()" style="background:#6c757d;">前のカード</button>
+            <button onclick="nextCard()" style="background:#007bff;">次のカード</button>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSWyVpnL2MfcYYD57HZxpdLjuKaSDkrnQ",
+            authDomain: "readingii.firebaseapp.com",
+            projectId: "readingii",
+            storageBucket: "readingii.firebasestorage.app",
+            messagingSenderId: "662452804754",
+            appId: "1:662452804754:web:51813a97a388bb99601a4b"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.fs = { doc, setDoc, getDoc };
+    </script>
+
+    <script src="app.js"></script>
+</body>
+>>>>>>> 4e9110db6c284fc55e9989ed8f1c9487eedbe868
 </html>
