@@ -1,0 +1,68 @@
+英単語学習システム開発
+1. システム概要と役割定義 (Role & Context)
+優秀なWebフロントエンドエンジニアとして、Vanilla JS（純粋なJavaScript）を使用した『英単語フラッシュカード学習システム』を作成してください。外部ライブラリは最小限にし、HTML/CSS/JSの3ファイル構成で、Firebase Firestoreを進捗保存に使用します。
+
+2. 技術スタックの指定 (Tech Stack)
+HTML5/CSS3: モバイルフレンドリーなレスポンシブデザイン。
+
+JavaScript: ES6+モジュール形式、Firebase SDK v10を使用。
+
+データ管理: data.jsという別ファイルから、allUnitsという定数に格納されたオブジェクトを読み込む。
+
+進捗保存: Firebase Firestore + LocalStorage（ユーザー名保持）。
+
+3. データ構造の定義 (Data Schema)
+以下のJSON形式のデータ構造を持つ data.js を前提にプログラムを組んでください。
+allUnits = { "Unit1": [ { "Word": "...", "品詞": "...", "意味1": "...", "発音記号": "...", "別の品詞": "...", "派生語1": "..." }, ... ] }
+
+4. 機能要件の構造化 (Functional Requirements)
+A. セットアップ画面 (Setup Screen)
+
+名前入力（LocalStorageに保存）機能。
+
+表示順（順番通り/ランダム）の選択。
+
+対象単語（全単語/未習得のみ）のフィルタリング。
+
+data.jsのキーに基づいた「Unit選択ボタン」の自動生成。
+
+
+B. 学習画面（カード操作） (Learning Screen)
+
+カードの反転: CSSの transform: rotateY(180deg) を使用した3Dアニメーション。
+
+音声再生: Web Speech APIを使用。
+
+派生語表示: 「派生語を表示」ボタンを押した時だけ詳細を表示するアコーディオン機能。
+
+ナビゲーション: 「前へ」「次へ」ボタンでインデックスを操作。
+
+
+C. 進捗管理 (Mastery System)
+
+「覚えた！」チェックボックスの設置。
+
+チェックを入れた単語のリストをFirebaseの progress/{studentName}/units/{unitName} パスに保存。
+
+再開時にFirebaseから既習得リストを取得し、カードに「習得済」バッジを表示。
+
+
+D. 未習得フィルターのロジック (Logic)
+
+「未習得のみ」モード選択時、Firebaseから取得した習得済み単語リストに含まれない単語のみで学習用リストを再構成する。
+
+5. UI/UXデザインの指定 (Design Specification)
+カードのサイズは350px × 500px程度、中央配置。
+
+表面（Front）には単語・品詞・発音記号を表示。
+
+裏面（Back）には意味・派生語・チェックボックスを表示。
+
+反転中は裏面の内容が見えないよう backface-visibility: hidden を徹底すること。
+
+6. エラー対策と修正指示 (Refinement)
+GitHub Pagesで動作させるため、ファイルのパスは相対パスにし、大文字小文字を厳密に区別してください。
+
+音声再生がモバイルで途切れないよう、再生前に speechSynthesis.cancel() を実行する処理を入れてください。
+
+Firebaseの初期化は type="module" 内で行い、window.db を通じてグローバルにアクセスできるようにしてください。
